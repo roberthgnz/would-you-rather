@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Plus, LogIn, ArrowLeft } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { LogIn, Plus } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../constants/api';
 import type { WYRQuestion } from '../types';
 
@@ -70,8 +70,6 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
                 onPress={() => lobbyState === "menu" ? onBack() : (setLobbyState("menu"), setError(null))}
                 style={styles.backButton}
             >
-                <ArrowLeft size={20} color="#4B5563" />
-                <Text style={styles.backButtonText}>Volver</Text>
             </TouchableOpacity>
 
             <View style={styles.content}>

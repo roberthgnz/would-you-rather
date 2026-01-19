@@ -32,7 +32,11 @@ export default function WaitingRoom({ roomId, playerId, onGameStart, onCancel }:
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         onGameStart(payload.payload.room.questions);
                     })
-                    .subscribe();
+                    .subscribe(async (status: string) => {
+                        if (status === 'SUBSCRIBED') {
+                            await channel.track({ online_at: new Date().toISOString() });
+                        }
+                    });
 
                 await channel.subscribe();
 

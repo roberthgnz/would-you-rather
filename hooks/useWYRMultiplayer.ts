@@ -106,9 +106,9 @@ export function useWYRMultiplayer({
                     .on('presence', { event: 'sync' }, () => {
                         const state = channel.presenceState();
                         const members = Object.keys(state);
-                        const opponentConnected = members.some(memberId => memberId !== playerId);
-                        setOpponentConnected(opponentConnected);
-                        if (opponentConnected) {
+                        const isOpponentPresent = members.some(memberId => memberId !== playerId);
+                        setOpponentConnected(isOpponentPresent);
+                        if (isOpponentPresent) {
                             callbacksRef.current.onOpponentJoined?.();
                         }
                     })
@@ -120,12 +120,20 @@ export function useWYRMultiplayer({
                     })
                     .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
                         if (key !== playerId) {
-                            setOpponentConnected(false);
-                            callbacksRef.current.onOpponentDisconnected?.();
+                            const state = channel.presenceState();
+                            const members = Object.keys(state);
+                            const isOpponentStillPresent = members.some(memberId => memberId !== playerId);
+                            setOpponentConnected(isOpponentStillPresent);
+                            if (!isOpponentStillPresent) {
+                                callbacksRef.current.onOpponentDisconnected?.();
+                            }
                         }
                     })
-                    .subscribe((status: string) => {
+                    .subscribe(async (status: string) => {
                         setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
+                        if (status === 'SUBSCRIBED') {
+                            await channel.track({ online_at: new Date().toISOString() });
+                        }
                     });
 
                 await channel.subscribe();

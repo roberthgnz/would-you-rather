@@ -1,6 +1,6 @@
-import { getWYRRoomManager, type WYRQuestion } from '@/lib/rooms/wyr-room';
-import { pusherServer } from '@/lib/pusher';
 import { getRandomWYRQuestions } from '@/lib/data/wyr-questions';
+import { getWYRRoomManager, type WYRQuestion } from '@/lib/rooms/wyr-room';
+import { supabaseServer } from '@/lib/supabase-server';
 
 function generateQuestions(): WYRQuestion[] {
     const questions = getRandomWYRQuestions(8);
@@ -20,7 +20,11 @@ export async function POST(request: Request) {
         manager.setQuestions(roomId, questions);
         const updatedRoom = manager.update(roomId, { status: 'playing' });
 
-        await pusherServer.trigger(`game-${roomId}`, 'player-joined', { guestId, room: updatedRoom });
+        await supabaseServer.channel(`game-${roomId}`).send({
+            type: 'broadcast',
+            event: 'player-joined',
+            payload: { guestId, room: updatedRoom }
+        });
 
         return Response.json({ success: true, room: updatedRoom });
     } catch (error) {

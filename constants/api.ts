@@ -22,7 +22,4 @@ const getApiUrl = () => {
 
 export const API_URL = getApiUrl();
 
-export const PUSHER_CONFIG = {
-    key: process.env.EXPO_PUBLIC_PUSHER_KEY!,
-    cluster: process.env.EXPO_PUBLIC_PUSHER_CLUSTER!,
-};
+

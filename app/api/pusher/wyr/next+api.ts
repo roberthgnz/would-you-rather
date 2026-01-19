@@ -1,5 +1,5 @@
 import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
-import { pusherServer } from '@/lib/pusher';
+import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
     try {
@@ -13,9 +13,17 @@ export async function POST(request: Request) {
         const isFinished = updatedRoom.status === 'finished';
 
         if (isFinished) {
-            await pusherServer.trigger(`game-${roomId}`, 'game-over', { results: updatedRoom.results });
+            await supabaseServer.channel(`game-${roomId}`).send({
+                type: 'broadcast',
+                event: 'game-over',
+                payload: { results: updatedRoom.results }
+            });
         } else {
-            await pusherServer.trigger(`game-${roomId}`, 'next-question', { currentQuestionIndex: updatedRoom.currentQuestionIndex });
+            await supabaseServer.channel(`game-${roomId}`).send({
+                type: 'broadcast',
+                event: 'next-question',
+                payload: { currentQuestionIndex: updatedRoom.currentQuestionIndex }
+            });
         }
 
         return Response.json({ success: true, isFinished });

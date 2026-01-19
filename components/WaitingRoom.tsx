@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Copy, Check } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase';
 import * as Clipboard from 'expo-clipboard';
-import Pusher from 'pusher-js';
 import * as Haptics from 'expo-haptics';
-import { PUSHER_CONFIG, API_URL } from '../constants/api';
+import { Check, Copy } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { WYRQuestion } from '../types';
 
 interface Props {
@@ -16,23 +15,45 @@ interface Props {
 
 export default function WaitingRoom({ roomId, playerId, onGameStart, onCancel }: Props) {
     const [copied, setCopied] = useState(false);
-    const pusherRef = useRef<Pusher | null>(null);
 
     useEffect(() => {
-        const pusher = new Pusher(PUSHER_CONFIG.key, {
-            cluster: PUSHER_CONFIG.cluster,
-            authEndpoint: `${API_URL}/api/pusher/auth`,
-            auth: { headers: { 'x-user-id': playerId, 'x-user-symbol': 'host' } },
-        });
-        pusherRef.current = pusher;
-        const channel = pusher.subscribe(`game-${roomId}`);
+        const initSupabaseRealtime = async () => {
+            try {
+                const channel = supabase.channel(`game-${roomId}`, {
+                    config: {
+                        presence: {
+                            key: playerId
+                        }
+                    }
+                });
 
-        channel.bind('player-joined', (data: { room: { questions: WYRQuestion[] } }) => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            onGameStart(data.room.questions);
-        });
+                channel
+                    .on('broadcast', { event: 'player-joined' }, (payload: any) => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        onGameStart(payload.payload.room.questions);
+                    })
+                    .subscribe();
 
-        return () => { channel.unbind_all(); pusher.unsubscribe(`game-${roomId}`); pusher.disconnect(); };
+                await channel.subscribe();
+
+            } catch (e) {
+                console.error('Supabase Realtime init error', e);
+            }
+        };
+
+        initSupabaseRealtime();
+
+        return () => {
+            const cleanup = async () => {
+                try {
+                    const channel = supabase.channel(`game-${roomId}`);
+                    await channel.unsubscribe();
+                } catch (e) {
+                    console.error('Cleanup error', e);
+                }
+            };
+            cleanup();
+        };
     }, [roomId, playerId, onGameStart]);
 
     const copyCode = async () => {

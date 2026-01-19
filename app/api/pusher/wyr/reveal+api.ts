@@ -1,5 +1,5 @@
 import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
-import { pusherServer } from '@/lib/pusher';
+import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
     try {
@@ -10,10 +10,14 @@ export async function POST(request: Request) {
         const updatedRoom = manager.revealResult(roomId);
         if (!updatedRoom) return Response.json({ error: 'Cannot reveal' }, { status: 400 });
 
-        await pusherServer.trigger(`game-${roomId}`, 'result-revealed', {
-            hostAnswer: updatedRoom.hostAnswer,
-            guestAnswer: updatedRoom.guestAnswer,
-            results: updatedRoom.results,
+        await supabaseServer.channel(`game-${roomId}`).send({
+            type: 'broadcast',
+            event: 'result-revealed',
+            payload: {
+                hostAnswer: updatedRoom.hostAnswer,
+                guestAnswer: updatedRoom.guestAnswer,
+                results: updatedRoom.results,
+            }
         });
 
         return Response.json({ success: true });

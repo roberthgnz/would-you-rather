@@ -1,5 +1,5 @@
 import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
-import { pusherServer } from '@/lib/pusher';
+import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
     try {
@@ -15,7 +15,11 @@ export async function POST(request: Request) {
         const hostVoted = updatedRoom.hostAnswer !== null;
         const guestVoted = updatedRoom.guestAnswer !== null;
 
-        await pusherServer.trigger(`game-${roomId}`, 'player-voted', { hostVoted, guestVoted, bothVoted: hostVoted && guestVoted });
+        await supabaseServer.channel(`game-${roomId}`).send({
+            type: 'broadcast',
+            event: 'player-voted',
+            payload: { hostVoted, guestVoted, bothVoted: hostVoted && guestVoted }
+        });
 
         return Response.json({ success: true, bothVoted: hostVoted && guestVoted });
     } catch (error) {

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import Pusher, { Channel, PresenceChannel } from 'pusher-js';
-import { PUSHER_CONFIG, API_URL } from '../constants/api';
-import type { WYRQuestion, WYRAnswer, WYRRoundResult } from '../types';
+import { supabase } from '@/lib/supabase';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { API_URL } from '../constants/api';
+import type { WYRAnswer, WYRQuestion, WYRRoundResult } from '../types';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
@@ -38,7 +38,6 @@ export function useWYRMultiplayer({
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
     const [opponentConnected, setOpponentConnected] = useState(initialOpponentConnected);
 
-    const pusherRef = useRef<Pusher | null>(null);
     const callbacksRef = useRef({ onOpponentJoined, onOpponentDisconnected, onGameOver });
 
     useEffect(() => { callbacksRef.current = { onOpponentJoined, onOpponentDisconnected, onGameOver }; });
@@ -48,82 +47,106 @@ export function useWYRMultiplayer({
     const bothVoted = myAnswer !== null && opponentVoted;
 
     useEffect(() => {
-        const pusher = new Pusher(PUSHER_CONFIG.key, {
-            cluster: PUSHER_CONFIG.cluster,
-            authEndpoint: `${API_URL}/api/pusher/auth`,
-            auth: { headers: { 'x-user-id': playerId, 'x-user-symbol': isHost ? 'host' : 'guest' } },
-        });
-        pusherRef.current = pusher;
+        const initSupabaseRealtime = async () => {
+            try {
+                const channel = supabase.channel(`game-${roomId}`, {
+                    config: {
+                        presence: {
+                            key: playerId
+                        }
+                    }
+                });
 
-        const channel = pusher.subscribe(`game-${roomId}`);
-        const presence = pusher.subscribe(`presence-game-${roomId}`) as PresenceChannel;
+                channel
+                    .on('broadcast', { event: 'player-joined' }, (payload: any) => {
+                        setQuestions(payload.payload.room.questions);
+                        setOpponentConnected(true);
+                        callbacksRef.current.onOpponentJoined?.();
+                    })
+                    .on('broadcast', { event: 'player-voted' }, (payload: any) => {
+                        setOpponentVoted(isHost ? payload.payload.guestVoted : payload.payload.hostVoted);
+                        if (payload.payload.bothVoted && isHost) {
+                            fetch(`${API_URL}/api/pusher/wyr/reveal`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ roomId, playerId }),
+                            }).catch(() => { });
+                        }
+                    })
+                    .on('broadcast', { event: 'result-revealed' }, (payload: any) => {
+                        setHostAnswer(payload.payload.hostAnswer);
+                        setGuestAnswer(payload.payload.guestAnswer);
+                        setResults(payload.payload.results);
+                        setShowingResult(true);
+                    })
+                    .on('broadcast', { event: 'next-question' }, (payload: any) => {
+                        setCurrentQuestionIndex(payload.payload.currentQuestionIndex);
+                        setMyAnswer(null);
+                        setOpponentVoted(false);
+                        setShowingResult(false);
+                        setHostAnswer(null);
+                        setGuestAnswer(null);
+                    })
+                    .on('broadcast', { event: 'game-over' }, (payload: any) => {
+                        setResults(payload.payload.results);
+                        setIsFinished(true);
+                        callbacksRef.current.onGameOver?.(payload.payload.results);
+                    })
+                    .on('broadcast', { event: 'game-reset' }, (payload: any) => {
+                        setQuestions(payload.payload.questions);
+                        setCurrentQuestionIndex(0);
+                        setMyAnswer(null);
+                        setOpponentVoted(false);
+                        setShowingResult(false);
+                        setHostAnswer(null);
+                        setGuestAnswer(null);
+                        setResults([]);
+                        setIsFinished(false);
+                    })
+                    .on('presence', { event: 'sync' }, () => {
+                        const state = channel.presenceState();
+                        const members = Object.keys(state);
+                        const opponentConnected = members.some(memberId => memberId !== playerId);
+                        setOpponentConnected(opponentConnected);
+                        if (opponentConnected) {
+                            callbacksRef.current.onOpponentJoined?.();
+                        }
+                    })
+                    .on('presence', { event: 'join' }, ({ key }: { key: string }) => {
+                        if (key !== playerId) {
+                            setOpponentConnected(true);
+                            callbacksRef.current.onOpponentJoined?.();
+                        }
+                    })
+                    .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
+                        if (key !== playerId) {
+                            setOpponentConnected(false);
+                            callbacksRef.current.onOpponentDisconnected?.();
+                        }
+                    })
+                    .subscribe((status: string) => {
+                        setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
+                    });
 
-        pusher.connection.bind('connected', () => setConnectionStatus('connected'));
-        pusher.connection.bind('disconnected', () => setConnectionStatus('disconnected'));
+                await channel.subscribe();
 
-        presence.bind('pusher:subscription_succeeded', () => setOpponentConnected(presence.members.count > 1));
-        presence.bind('pusher:member_added', () => { setOpponentConnected(true); callbacksRef.current.onOpponentJoined?.(); });
-        presence.bind('pusher:member_removed', () => {
-            if (presence.members.count <= 1) { setOpponentConnected(false); callbacksRef.current.onOpponentDisconnected?.(); }
-        });
-
-        channel.bind('player-joined', (data: { room: { questions: WYRQuestion[] } }) => {
-            setQuestions(data.room.questions);
-            setOpponentConnected(true);
-            callbacksRef.current.onOpponentJoined?.();
-        });
-
-        channel.bind('player-voted', (data: { hostVoted: boolean; guestVoted: boolean; bothVoted: boolean }) => {
-            setOpponentVoted(isHost ? data.guestVoted : data.hostVoted);
-            if (data.bothVoted && isHost) {
-                fetch(`${API_URL}/api/pusher/wyr/reveal`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, playerId }),
-                }).catch(() => { });
+            } catch (e) {
+                console.error('Supabase Realtime init error', e);
             }
-        });
+        };
 
-        channel.bind('result-revealed', (data: { hostAnswer: WYRAnswer; guestAnswer: WYRAnswer; results: WYRRoundResult[] }) => {
-            setHostAnswer(data.hostAnswer);
-            setGuestAnswer(data.guestAnswer);
-            setResults(data.results);
-            setShowingResult(true);
-        });
-
-        channel.bind('next-question', (data: { currentQuestionIndex: number }) => {
-            setCurrentQuestionIndex(data.currentQuestionIndex);
-            setMyAnswer(null);
-            setOpponentVoted(false);
-            setShowingResult(false);
-            setHostAnswer(null);
-            setGuestAnswer(null);
-        });
-
-        channel.bind('game-over', (data: { results: WYRRoundResult[] }) => {
-            setResults(data.results);
-            setIsFinished(true);
-            callbacksRef.current.onGameOver?.(data.results);
-        });
-
-        channel.bind('game-reset', (data: { questions: WYRQuestion[] }) => {
-            setQuestions(data.questions);
-            setCurrentQuestionIndex(0);
-            setMyAnswer(null);
-            setOpponentVoted(false);
-            setShowingResult(false);
-            setHostAnswer(null);
-            setGuestAnswer(null);
-            setResults([]);
-            setIsFinished(false);
-        });
+        initSupabaseRealtime();
 
         return () => {
-            channel.unbind_all();
-            presence.unbind_all();
-            pusher.unsubscribe(`game-${roomId}`);
-            pusher.unsubscribe(`presence-game-${roomId}`);
-            pusher.disconnect();
+            const cleanup = async () => {
+                try {
+                    const channel = supabase.channel(`game-${roomId}`);
+                    await channel.unsubscribe();
+                } catch (e) {
+                    console.error('Cleanup error', e);
+                }
+            };
+            cleanup();
         };
     }, [roomId, playerId, isHost]);
 
@@ -164,7 +187,8 @@ export function useWYRMultiplayer({
 
     const leaveGame = useCallback(() => {
         fetch(`${API_URL}/api/pusher/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId, playerId }) }).catch(() => { });
-        pusherRef.current?.disconnect();
+        const channel = supabase.channel(`game-${roomId}`);
+        channel.unsubscribe();
     }, [roomId, playerId]);
 
     return {

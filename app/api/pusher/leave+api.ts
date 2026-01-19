@@ -1,5 +1,5 @@
-import { pusherServer } from '@/lib/pusher';
 import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
+import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
     try {
@@ -25,8 +25,10 @@ export async function POST(request: Request) {
         roomManager.leave(roomId, playerId);
 
         // Notify other players that this player has disconnected
-        await pusherServer.trigger(`game-${roomId}`, 'player-disconnected', {
-            playerId,
+        await supabaseServer.channel(`game-${roomId}`).send({
+            type: 'broadcast',
+            event: 'player-disconnected',
+            payload: { playerId }
         });
 
         return Response.json({ success: true });

@@ -32,7 +32,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/wyr/wyr/room`, {
+            const res = await fetch(`${API_URL}/api/wyr/room`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ hostId: playerId }),
@@ -67,7 +67,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/wyr/wyr/join`, {
+            const res = await fetch(`${API_URL}/api/wyr/join`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ roomId: joinRoomId.toUpperCase().trim(), guestId: playerId }),

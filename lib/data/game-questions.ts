@@ -1,12 +1,14 @@
-export type WYRCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
+import { getRandomItems } from '../game-utils';
 
-export interface WYRQuestionData {
+export type GameCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
+
+export interface QuestionData {
     optionA: string;
     optionB: string;
-    category: WYRCategory;
+    category: GameCategory;
 }
 
-export const WYR_QUESTIONS: WYRQuestionData[] = [
+export const GAME_QUESTIONS: QuestionData[] = [
     // Romántico (50)
     { optionA: "Cena romántica en casa", optionB: "Cena en restaurante elegante", category: "romantico" },
     { optionA: "Desayuno en la cama", optionB: "Desayuno sorpresa afuera", category: "romantico" },
@@ -268,8 +270,6 @@ export const WYR_QUESTIONS: WYRQuestionData[] = [
     { optionA: "Ser el último humano", optionB: "Ser el primer humano en otro planeta", category: "random" },
 ];
 
-import { getRandomItems } from '../game-utils';
-
-export function getRandomWYRQuestions(count: number = 8): WYRQuestionData[] {
-    return getRandomItems(WYR_QUESTIONS, count);
+export function getRandomQuestions(count: number = 8): QuestionData[] {
+    return getRandomItems(GAME_QUESTIONS, count);
 }

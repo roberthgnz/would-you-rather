@@ -1,11 +1,11 @@
 import React from 'react';
+import { GameLayout } from '../components/GameLayout';
 import MultiplayerGame from '../components/MultiplayerGame';
-import WYRMultiplayerLobby from '../components/MultiplayerLobby';
-import { WYRLayout } from '../components/WYRLayout';
+import MultiplayerLobby from '../components/MultiplayerLobby';
 import WaitingRoom from '../components/WaitingRoom';
-import { useWYRGame } from '../hooks/useWYRGame';
+import { useGame } from '../hooks/useGame';
 
-export default function WYRScreen() {
+export default function GameScreen() {
     const {
         gameMode,
         state,
@@ -14,12 +14,12 @@ export default function WYRScreen() {
         handleGameStart,
         handleLeave,
         handleBack,
-    } = useWYRGame();
+    } = useGame();
 
     return (
-        <WYRLayout>
+        <GameLayout>
             {gameMode === "lobby" && (
-                <WYRMultiplayerLobby 
+                <MultiplayerLobby 
                     onRoomCreated={handleRoomCreated} 
                     onRoomJoined={handleRoomJoined} 
                     onBack={handleBack} 
@@ -43,6 +43,6 @@ export default function WYRScreen() {
                     onLeave={handleLeave} 
                 />
             )}
-        </WYRLayout>
+        </GameLayout>
     );
 }

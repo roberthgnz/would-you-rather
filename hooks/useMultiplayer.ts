@@ -1,22 +1,22 @@
 import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { API_URL } from '../constants/api';
-import type { WYRAnswer, WYRQuestion, WYRRoundResult } from '../types';
+import type { Answer, Question, RoundResult } from '../types';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
-interface UseWYRMultiplayerOptions {
+interface UseMultiplayerOptions {
     roomId: string;
     playerId: string;
     isHost: boolean;
-    initialQuestions?: WYRQuestion[];
+    initialQuestions?: Question[];
     initialOpponentConnected?: boolean;
     onOpponentJoined?: () => void;
     onOpponentDisconnected?: () => void;
-    onGameOver?: (results: WYRRoundResult[]) => void;
+    onGameOver?: (results: RoundResult[]) => void;
 }
 
-export function useWYRMultiplayer({
+export function useMultiplayer({
     roomId,
     playerId,
     isHost,
@@ -25,15 +25,15 @@ export function useWYRMultiplayer({
     onOpponentJoined,
     onOpponentDisconnected,
     onGameOver,
-}: UseWYRMultiplayerOptions) {
-    const [questions, setQuestions] = useState<WYRQuestion[]>(initialQuestions);
+}: UseMultiplayerOptions) {
+    const [questions, setQuestions] = useState<Question[]>(initialQuestions);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [myAnswer, setMyAnswer] = useState<WYRAnswer>(null);
+    const [myAnswer, setMyAnswer] = useState<Answer>(null);
     const [opponentVoted, setOpponentVoted] = useState(false);
     const [showingResult, setShowingResult] = useState(false);
-    const [hostAnswer, setHostAnswer] = useState<WYRAnswer>(null);
-    const [guestAnswer, setGuestAnswer] = useState<WYRAnswer>(null);
-    const [results, setResults] = useState<WYRRoundResult[]>([]);
+    const [hostAnswer, setHostAnswer] = useState<Answer>(null);
+    const [guestAnswer, setGuestAnswer] = useState<Answer>(null);
+    const [results, setResults] = useState<RoundResult[]>([]);
     const [isFinished, setIsFinished] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
     const [opponentConnected, setOpponentConnected] = useState(initialOpponentConnected);
@@ -66,7 +66,7 @@ export function useWYRMultiplayer({
                     .on('broadcast', { event: 'player-voted' }, (payload: any) => {
                         setOpponentVoted(isHost ? payload.payload.guestVoted : payload.payload.hostVoted);
                         if (payload.payload.bothVoted && isHost) {
-                            fetch(`${API_URL}/api/wyr/reveal`, {
+                            fetch(`${API_URL}/api/game/reveal`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ roomId, playerId }),
@@ -158,10 +158,10 @@ export function useWYRMultiplayer({
         };
     }, [roomId, playerId, isHost]);
 
-    const vote = useCallback(async (answer: WYRAnswer): Promise<boolean> => {
+    const vote = useCallback(async (answer: Answer): Promise<boolean> => {
         if (myAnswer !== null || !answer) return false;
         try {
-            const res = await fetch(`${API_URL}/api/wyr/vote`, {
+            const res = await fetch(`${API_URL}/api/game/vote`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId, answer }),
@@ -173,7 +173,7 @@ export function useWYRMultiplayer({
 
     const nextQuestion = useCallback(async (): Promise<boolean> => {
         try {
-            const res = await fetch(`${API_URL}/api/wyr/next`, {
+            const res = await fetch(`${API_URL}/api/game/next`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId }),
@@ -184,7 +184,7 @@ export function useWYRMultiplayer({
 
     const resetGame = useCallback(async (): Promise<boolean> => {
         try {
-            const res = await fetch(`${API_URL}/api/wyr/reset`, {
+            const res = await fetch(`${API_URL}/api/game/reset`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId }),
@@ -194,7 +194,7 @@ export function useWYRMultiplayer({
     }, [roomId, playerId]);
 
     const leaveGame = useCallback(() => {
-        fetch(`${API_URL}/api/wyr/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId, playerId }) }).catch(() => { });
+        fetch(`${API_URL}/api/game/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId, playerId }) }).catch(() => { });
         const channel = supabase.channel(`game-${roomId}`);
         channel.unsubscribe();
     }, [roomId, playerId]);

@@ -2,42 +2,42 @@ import type { BaseRoom, IGameRoomFactory } from './types';
 import { BaseRoomManager } from './base-room-manager';
 import { InMemoryRoomStorage } from './storage';
 
-export type WYRCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
+export type GameCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
 
-export interface WYRQuestion {
+export interface Question {
     id: number;
     optionA: string;
     optionB: string;
-    category: WYRCategory;
+    category: GameCategory;
 }
 
-export type WYRAnswer = 'A' | 'B' | null;
+export type Answer = 'A' | 'B' | null;
 
-export interface WYRRoundResult {
+export interface RoundResult {
     questionId: number;
-    hostAnswer: WYRAnswer;
-    guestAnswer: WYRAnswer;
+    hostAnswer: Answer;
+    guestAnswer: Answer;
     match: boolean;
 }
 
-export interface WYRRoom extends BaseRoom {
-    gameType: 'wyr';
-    questions: WYRQuestion[];
+export interface GameRoom extends BaseRoom {
+    gameType: 'game';
+    questions: Question[];
     currentQuestionIndex: number;
-    hostAnswer: WYRAnswer;
-    guestAnswer: WYRAnswer;
-    results: WYRRoundResult[];
+    hostAnswer: Answer;
+    guestAnswer: Answer;
+    results: RoundResult[];
     showingResult: boolean;
 }
 
-export class WYRRoomFactory implements IGameRoomFactory<WYRRoom> {
-    gameType = 'wyr' as const;
+export class GameRoomFactory implements IGameRoomFactory<GameRoom> {
+    gameType = 'game' as const;
 
-    createInitialState(hostId: string, roomId: string): WYRRoom {
+    createInitialState(hostId: string, roomId: string): GameRoom {
         const now = Date.now();
         return {
             id: roomId,
-            gameType: 'wyr',
+            gameType: 'game',
             hostId,
             guestId: null,
             questions: [],
@@ -52,7 +52,7 @@ export class WYRRoomFactory implements IGameRoomFactory<WYRRoom> {
         };
     }
 
-    resetGameState(_room: WYRRoom): Partial<WYRRoom> {
+    resetGameState(_room: GameRoom): Partial<GameRoom> {
         return {
             currentQuestionIndex: 0,
             hostAnswer: null,
@@ -64,41 +64,41 @@ export class WYRRoomFactory implements IGameRoomFactory<WYRRoom> {
     }
 }
 
-export class WYRRoomManager extends BaseRoomManager<WYRRoom> {
+export class GameRoomManager extends BaseRoomManager<GameRoom> {
     constructor() {
-        super(new InMemoryRoomStorage<WYRRoom>(), new WYRRoomFactory());
+        super(new InMemoryRoomStorage<GameRoom>(), new GameRoomFactory());
     }
 
-    setQuestions(roomId: string, questions: WYRQuestion[]): WYRRoom | null {
+    setQuestions(roomId: string, questions: Question[]): GameRoom | null {
         return this.update(roomId, { questions });
     }
 
-    recordAnswer(roomId: string, playerId: string, answer: WYRAnswer): WYRRoom | null {
+    recordAnswer(roomId: string, playerId: string, answer: Answer): GameRoom | null {
         const room = this.getRoom(roomId);
         if (!room) return null;
 
         const role = this.getPlayerRole(room, playerId);
         if (!role) return null;
 
-        const updates: Partial<WYRRoom> = {};
+        const updates: Partial<GameRoom> = {};
         if (role === 'host') updates.hostAnswer = answer;
         else updates.guestAnswer = answer;
 
         return this.update(roomId, updates);
     }
 
-    bothAnswered(room: WYRRoom): boolean {
+    bothAnswered(room: GameRoom): boolean {
         return room.hostAnswer !== null && room.guestAnswer !== null;
     }
 
-    revealResult(roomId: string): WYRRoom | null {
+    revealResult(roomId: string): GameRoom | null {
         const room = this.getRoom(roomId);
         if (!room || !this.bothAnswered(room)) return null;
 
         const question = room.questions[room.currentQuestionIndex];
         const match = room.hostAnswer === room.guestAnswer;
 
-        const result: WYRRoundResult = {
+        const result: RoundResult = {
             questionId: question.id,
             hostAnswer: room.hostAnswer,
             guestAnswer: room.guestAnswer,
@@ -111,7 +111,7 @@ export class WYRRoomManager extends BaseRoomManager<WYRRoom> {
         });
     }
 
-    nextQuestion(roomId: string): WYRRoom | null {
+    nextQuestion(roomId: string): GameRoom | null {
         const room = this.getRoom(roomId);
         if (!room) return null;
 
@@ -128,11 +128,11 @@ export class WYRRoomManager extends BaseRoomManager<WYRRoom> {
     }
 }
 
-const globalForRooms = globalThis as unknown as { wyrRoomManager: WYRRoomManager | undefined };
+const globalForRooms = globalThis as unknown as { gameRoomManager: GameRoomManager | undefined };
 
-export function getWYRRoomManager(): WYRRoomManager {
-    if (!globalForRooms.wyrRoomManager) {
-        globalForRooms.wyrRoomManager = new WYRRoomManager();
+export function getGameRoomManager(): GameRoomManager {
+    if (!globalForRooms.gameRoomManager) {
+        globalForRooms.gameRoomManager = new GameRoomManager();
     }
-    return globalForRooms.wyrRoomManager;
+    return globalForRooms.gameRoomManager;
 }

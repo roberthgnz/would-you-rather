@@ -1,8 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { useWYRMultiplayer } from '../hooks/useWYRMultiplayer';
-import type { WYRAnswer, WYRQuestion } from '../types';
+import { useMultiplayer } from '../hooks/useMultiplayer';
+import type { Answer, Question } from '../types';
 import { GameFinished } from './game/GameFinished';
 import { GameProgress } from './game/GameProgress';
 import { GameTopBar } from './game/GameTopBar';
@@ -14,7 +14,7 @@ interface Props {
     roomId: string;
     playerId: string;
     isHost: boolean;
-    initialQuestions?: WYRQuestion[];
+    initialQuestions?: Question[];
     initialOpponentConnected: boolean;
     onLeave: () => void;
 }
@@ -24,14 +24,14 @@ export default function MultiplayerGame({ roomId, playerId, isHost, initialQuest
         questions, currentQuestionIndex, currentQuestion, myAnswer, opponentVoted, bothVoted,
         showingResult, hostAnswer, guestAnswer, results, isFinished, connectionStatus, opponentConnected,
         vote, nextQuestion, resetGame, leaveGame,
-    } = useWYRMultiplayer({
+    } = useMultiplayer({
         roomId, playerId, isHost, initialQuestions, initialOpponentConnected,
         onOpponentJoined: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
         onOpponentDisconnected: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
         onGameOver: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
     });
 
-    const handleVote = async (answer: WYRAnswer) => {
+    const handleVote = async (answer: Answer) => {
         if (myAnswer || showingResult || !answer) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const success = await vote(answer);

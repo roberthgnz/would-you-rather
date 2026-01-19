@@ -1,4 +1,4 @@
-import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
+import { getGameRoomManager } from '@/lib/rooms/game-room';
 import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         }
 
         // Remove player from room
-        const roomManager = getWYRRoomManager();
+        const roomManager = getGameRoomManager();
         roomManager.leave(roomId, playerId);
 
         // Notify other players that this player has disconnected

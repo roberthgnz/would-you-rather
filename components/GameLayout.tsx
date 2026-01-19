@@ -4,11 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
 
-interface WYRLayoutProps {
+interface GameLayoutProps {
     children: React.ReactNode;
 }
 
-export function WYRLayout({ children }: WYRLayoutProps) {
+export function GameLayout({ children }: GameLayoutProps) {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />

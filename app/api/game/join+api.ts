@@ -1,9 +1,9 @@
-import { getRandomWYRQuestions } from '@/lib/data/wyr-questions';
-import { getWYRRoomManager, type WYRQuestion } from '@/lib/rooms/wyr-room';
+import { getRandomQuestions } from '@/lib/data/game-questions';
+import { getGameRoomManager, type Question } from '@/lib/rooms/game-room';
 import { supabaseServer } from '@/lib/supabase-server';
 
-function generateQuestions(): WYRQuestion[] {
-    const questions = getRandomWYRQuestions(8);
+function generateQuestions(): Question[] {
+    const questions = getRandomQuestions(8);
     return questions.map((q, i) => ({ id: Date.now() + i, ...q }));
 }
 
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
         const { roomId, guestId } = await request.json();
         if (!roomId || !guestId) return Response.json({ error: 'Missing fields' }, { status: 400 });
 
-        const manager = getWYRRoomManager();
+        const manager = getGameRoomManager();
         const room = manager.join(roomId, guestId);
         if (!room) return Response.json({ error: 'Room not found or full' }, { status: 404 });
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
         return Response.json({ success: true, room: updatedRoom });
     } catch (error) {
-        console.error('Error joining WYR room:', error);
+        console.error('Error joining game room:', error);
         return Response.json({ error: 'Failed' }, { status: 500 });
     }
 }

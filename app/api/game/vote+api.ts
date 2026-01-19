@@ -1,4 +1,4 @@
-import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
+import { getGameRoomManager } from '@/lib/rooms/game-room';
 import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
@@ -8,7 +8,7 @@ export async function POST(request: Request) {
             return Response.json({ error: 'Invalid' }, { status: 400 });
         }
 
-        const manager = getWYRRoomManager();
+        const manager = getGameRoomManager();
         const updatedRoom = manager.recordAnswer(roomId, playerId, answer);
         if (!updatedRoom) return Response.json({ error: 'Failed' }, { status: 400 });
 

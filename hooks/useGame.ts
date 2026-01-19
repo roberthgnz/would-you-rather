@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { API_URL } from '../constants/api';
-import type { WYRQuestion } from '../types';
+import type { Question } from '../types';
 
 export type GameMode = "lobby" | "waiting" | "game";
 
@@ -9,11 +9,11 @@ export interface MultiplayerState {
     roomId: string;
     playerId: string;
     isHost: boolean;
-    questions: WYRQuestion[];
+    questions: Question[];
     opponentConnected: boolean;
 }
 
-export function useWYRGame() {
+export function useGame() {
     const router = useRouter();
     const [gameMode, setGameMode] = useState<GameMode>("lobby");
     const [state, setState] = useState<MultiplayerState | null>(null);
@@ -23,12 +23,12 @@ export function useWYRGame() {
         setGameMode("waiting");
     };
 
-    const handleRoomJoined = (roomId: string, playerId: string, questions: WYRQuestion[]) => {
+    const handleRoomJoined = (roomId: string, playerId: string, questions: Question[]) => {
         setState({ roomId, playerId, isHost: false, questions, opponentConnected: true });
         setGameMode("game");
     };
 
-    const handleGameStart = (questions: WYRQuestion[]) => {
+    const handleGameStart = (questions: Question[]) => {
         if (state) {
             setState({ ...state, questions, opponentConnected: true });
             setGameMode("game");
@@ -37,7 +37,7 @@ export function useWYRGame() {
 
     const handleLeave = () => {
         if (state?.roomId && state?.playerId) {
-            fetch(`${API_URL}/api/wyr/leave`, {
+            fetch(`${API_URL}/api/game/leave`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId }),

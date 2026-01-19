@@ -1,17 +1,17 @@
-export type WYRCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
+export type GameCategory = 'divertido' | 'romantico' | 'aventura' | 'comida' | 'random';
 
-export interface WYRQuestion {
+export interface Question {
     id: number;
     optionA: string;
     optionB: string;
-    category: WYRCategory;
+    category: GameCategory;
 }
 
-export type WYRAnswer = 'A' | 'B' | null;
+export type Answer = 'A' | 'B' | null;
 
-export interface WYRRoundResult {
+export interface RoundResult {
     questionId: number;
-    hostAnswer: WYRAnswer;
-    guestAnswer: WYRAnswer;
+    hostAnswer: Answer;
+    guestAnswer: Answer;
     match: boolean;
 }

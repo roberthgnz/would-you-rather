@@ -1,4 +1,4 @@
-import { getWYRRoomManager } from '@/lib/rooms/wyr-room';
+import { getGameRoomManager } from '@/lib/rooms/game-room';
 import { supabaseServer } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
@@ -6,7 +6,7 @@ export async function POST(request: Request) {
         const { roomId, playerId } = await request.json();
         if (!roomId || !playerId) return Response.json({ error: 'Missing' }, { status: 400 });
 
-        const manager = getWYRRoomManager();
+        const manager = getGameRoomManager();
         const updatedRoom = manager.revealResult(roomId);
         if (!updatedRoom) return Response.json({ error: 'Cannot reveal' }, { status: 400 });
 

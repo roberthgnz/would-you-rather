@@ -1,19 +1,19 @@
 import * as Haptics from 'expo-haptics';
-import { LogIn, Plus } from 'lucide-react-native';
+import { ChevronLeft, LogIn, Plus } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../constants/api';
-import type { WYRQuestion } from '../types';
+import type { Question } from '../types';
 
 interface Props {
     onRoomCreated: (roomId: string, playerId: string) => void;
-    onRoomJoined: (roomId: string, playerId: string, questions: WYRQuestion[]) => void;
+    onRoomJoined: (roomId: string, playerId: string, questions: Question[]) => void;
     onBack: () => void;
 }
 
 const generatePlayerId = () => `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }: Props) {
+export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }: Props) {
     const [lobbyState, setLobbyState] = useState<"menu" | "joining">("menu");
     const [joinRoomId, setJoinRoomId] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -24,6 +24,17 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         return () => { isCancelled.current = true; };
     }, []);
 
+    const handleCancel = () => {
+        isCancelled.current = true;
+        setIsLoading(false);
+        if (lobbyState === "menu") {
+            onBack();
+        } else {
+            setLobbyState("menu");
+            setError(null);
+        }
+    };
+
     const handleCreateRoom = async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsLoading(true);
@@ -32,7 +43,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/wyr/room`, {
+            const res = await fetch(`${API_URL}/api/game/room`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ hostId: playerId }),
@@ -41,7 +52,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
             
             if (isCancelled.current) {
                 if (data.roomId) {
-                    fetch(`${API_URL}/api/wyr/leave`, {
+                    fetch(`${API_URL}/api/game/leave`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.roomId, playerId }),
@@ -67,7 +78,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/wyr/join`, {
+            const res = await fetch(`${API_URL}/api/game/join`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ roomId: joinRoomId.toUpperCase().trim(), guestId: playerId }),
@@ -76,7 +87,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
 
             if (isCancelled.current) {
                 if (data.success && data.room) {
-                    fetch(`${API_URL}/api/wyr/leave`, {
+                    fetch(`${API_URL}/api/game/leave`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.room.id, playerId }),
@@ -101,19 +112,13 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         finally { if (!isCancelled.current) setIsLoading(false); }
     };
 
-    const handleCancel = () => {
-        isCancelled.current = true;
-        setIsLoading(false);
-        if (lobbyState === "menu") {
-            onBack();
-        } else {
-            setLobbyState("menu");
-            setError(null);
-        }
-    };
-
     return (
         <View style={styles.container}>
+            <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
+                <ChevronLeft size={24} color="#4B5563" />
+                <Text style={styles.backButtonText}>Atrás</Text>
+            </TouchableOpacity>
+
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.iconContainer}>

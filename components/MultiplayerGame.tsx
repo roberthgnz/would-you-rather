@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useMultiplayer } from '../hooks/useMultiplayer';
 import type { Answer, Question } from '../types';
 import { GameFinished } from './game/GameFinished';
@@ -9,6 +9,7 @@ import { GameTopBar } from './game/GameTopBar';
 import { PartnerStatus } from './game/PartnerStatus';
 import { QuestionCard } from './game/QuestionCard';
 import { RoundResult } from './game/RoundResult';
+import { ConfirmationDrawer } from './ui/ConfirmationDrawer';
 
 interface Props {
     roomId: string;
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function MultiplayerGame({ roomId, playerId, isHost, initialQuestions = [], initialOpponentConnected, onLeave }: Props) {
+    const [isLeaveDrawerVisible, setIsLeaveDrawerVisible] = useState(false);
     const {
         questions, currentQuestionIndex, currentQuestion, myAnswer, opponentVoted, bothVoted,
         showingResult, hostAnswer, guestAnswer, results, isFinished, connectionStatus, opponentConnected,
@@ -48,6 +50,15 @@ export default function MultiplayerGame({ roomId, playerId, isHost, initialQuest
         await resetGame();
     };
 
+    const handleLeaveClick = () => {
+        setIsLeaveDrawerVisible(true);
+    };
+
+    const confirmLeave = () => {
+        leaveGame();
+        onLeave();
+    };
+
     const handleLeave = () => { leaveGame(); onLeave(); };
 
     const matchCount = results.filter(r => r.match).length;
@@ -68,51 +79,63 @@ export default function MultiplayerGame({ roomId, playerId, isHost, initialQuest
     }
 
     return (
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-            <GameTopBar 
-                onLeave={handleLeave} 
-                connectionStatus={connectionStatus} 
-                opponentConnected={opponentConnected} 
-            />
+        <View style={{ flex: 1 }}>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+                <GameTopBar 
+                    onLeave={handleLeaveClick} 
+                    connectionStatus={connectionStatus} 
+                    opponentConnected={opponentConnected} 
+                />
 
-            <GameProgress 
-                currentIndex={currentQuestionIndex} 
-                total={questions.length} 
-                matchCount={matchCount} 
-            />
+                <GameProgress 
+                    currentIndex={currentQuestionIndex} 
+                    total={questions.length} 
+                    matchCount={matchCount} 
+                />
 
-            {currentQuestion && (
-                <QuestionCard 
-                    question={currentQuestion} 
-                    myAnswer={myAnswer} 
+                {currentQuestion && (
+                    <QuestionCard 
+                        question={currentQuestion} 
+                        myAnswer={myAnswer} 
+                        showingResult={showingResult} 
+                        myDisplayAnswer={myDisplayAnswer} 
+                        opponentDisplayAnswer={opponentDisplayAnswer} 
+                        onVote={handleVote} 
+                    />
+                )}
+
+                <PartnerStatus 
                     showingResult={showingResult} 
-                    myDisplayAnswer={myDisplayAnswer} 
+                    opponentVoted={opponentVoted} 
                     opponentDisplayAnswer={opponentDisplayAnswer} 
-                    onVote={handleVote} 
                 />
-            )}
 
-            <PartnerStatus 
-                showingResult={showingResult} 
-                opponentVoted={opponentVoted} 
-                opponentDisplayAnswer={opponentDisplayAnswer} 
+                {showingResult ? (
+                    <RoundResult 
+                        myDisplayAnswer={myDisplayAnswer} 
+                        opponentDisplayAnswer={opponentDisplayAnswer} 
+                        isHost={isHost} 
+                        currentQuestionIndex={currentQuestionIndex} 
+                        totalQuestions={questions.length} 
+                        onNext={handleNext} 
+                    />
+                ) : bothVoted ? (
+                    <Text style={styles.statusTextCenter}>Revelando resultado...</Text>
+                ) : (
+                    <Text style={styles.statusTextCenter}>{myAnswer ? 'Esperando a tu pareja...' : 'Elige una opción'}</Text>
+                )}
+            </ScrollView>
+
+            <ConfirmationDrawer
+                visible={isLeaveDrawerVisible}
+                onClose={() => setIsLeaveDrawerVisible(false)}
+                onConfirm={confirmLeave}
+                title="¿Salir de la partida?"
+                description="Si sales ahora, la partida terminará para ambos jugadores."
+                confirmText="Sí, salir"
+                cancelText="Cancelar"
             />
-
-            {showingResult ? (
-                <RoundResult 
-                    myDisplayAnswer={myDisplayAnswer} 
-                    opponentDisplayAnswer={opponentDisplayAnswer} 
-                    isHost={isHost} 
-                    currentQuestionIndex={currentQuestionIndex} 
-                    totalQuestions={questions.length} 
-                    onNext={handleNext} 
-                />
-            ) : bothVoted ? (
-                <Text style={styles.statusTextCenter}>Revelando resultado...</Text>
-            ) : (
-                <Text style={styles.statusTextCenter}>{myAnswer ? 'Esperando a tu pareja...' : 'Elige una opción'}</Text>
-            )}
-        </ScrollView>
+        </View>
     );
 }
 

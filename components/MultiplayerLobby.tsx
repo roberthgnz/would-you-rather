@@ -49,22 +49,22 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                 body: JSON.stringify({ hostId: playerId }),
             });
             const data = await res.json();
-            
+
             if (isCancelled.current) {
                 if (data.roomId) {
                     fetch(`${API_URL}/api/game/leave`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.roomId, playerId }),
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }
                 return;
             }
 
             if (data.roomId) onRoomCreated(data.roomId, playerId);
             else setError("Error al crear la sala");
-        } catch { 
-            if (!isCancelled.current) setError("Error de conexión"); 
+        } catch {
+            if (!isCancelled.current) setError("Error de conexión");
         }
         finally { if (!isCancelled.current) setIsLoading(false); }
     };
@@ -91,7 +91,7 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.room.id, playerId }),
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }
                 return;
             }
@@ -114,10 +114,11 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-                <ChevronLeft size={24} color="#4B5563" />
-                <Text style={styles.backButtonText}>Atrás</Text>
-            </TouchableOpacity>
+            {lobbyState !== 'menu' && (
+                <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
+                    <ChevronLeft size={24} color="#4B5563" />
+                    <Text style={styles.backButtonText}>Atrás</Text>
+                </TouchableOpacity>)}
 
             <View style={styles.content}>
                 <View style={styles.header}>
@@ -130,8 +131,8 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
 
                 {lobbyState === "menu" && (
                     <View style={styles.menuContainer}>
-                        <TouchableOpacity 
-                            onPress={handleCreateRoom} 
+                        <TouchableOpacity
+                            onPress={handleCreateRoom}
                             disabled={isLoading}
                             style={[styles.button, styles.primaryButton, isLoading && styles.disabledButton]}
                         >
@@ -145,10 +146,10 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            onPress={() => { 
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
-                                setLobbyState("joining"); 
+                        <TouchableOpacity
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setLobbyState("joining");
                             }}
                             disabled={isLoading}
                             style={[styles.button, styles.secondaryButton, isLoading && styles.disabledButton]}
@@ -156,7 +157,7 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                             <LogIn size={24} color="#374151" />
                             <Text style={styles.secondaryButtonText}>Unirse a Sala</Text>
                         </TouchableOpacity>
-                        
+
                         {error && <Text style={styles.errorText}>{error}</Text>}
                     </View>
                 )}
@@ -167,12 +168,12 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                             <Text style={styles.joinTitle}>Unirse a Sala</Text>
                             <Text style={styles.joinSubtitle}>Código de 6 caracteres</Text>
                         </View>
-                        
+
                         <TextInput
                             value={joinRoomId}
-                            onChangeText={(text) => { 
-                                setJoinRoomId(text.toUpperCase().slice(0, 6)); 
-                                setError(null); 
+                            onChangeText={(text) => {
+                                setJoinRoomId(text.toUpperCase().slice(0, 6));
+                                setError(null);
                             }}
                             placeholder="XXXXXX"
                             maxLength={6}
@@ -180,11 +181,11 @@ export default function MultiplayerLobby({ onRoomCreated, onRoomJoined, onBack }
                             style={styles.input}
                             autoFocus
                         />
-                        
+
                         {error && <Text style={styles.errorText}>{error}</Text>}
-                        
-                        <TouchableOpacity 
-                            onPress={handleJoinRoom} 
+
+                        <TouchableOpacity
+                            onPress={handleJoinRoom}
                             disabled={isLoading || joinRoomId.length !== 6}
                             style={[styles.button, styles.primaryButton, styles.marginTop, (isLoading || joinRoomId.length !== 6) && styles.disabledButton]}
                         >

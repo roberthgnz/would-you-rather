@@ -1,4 +1,4 @@
-import { AlertTriangle, X } from 'lucide-react-native';
+import { LogOut, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
@@ -64,7 +64,7 @@ export function ConfirmationDrawer({
                         <Pressable onPress={(e) => e.stopPropagation()}>
                             <View style={styles.header}>
                                 <View style={styles.iconContainer}>
-                                    <AlertTriangle size={24} color="#D97706" />
+                                    <LogOut size={24} color="#EF4444" />
                                 </View>
                                 <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                                     <X size={24} color="#9CA3AF" />
@@ -79,18 +79,18 @@ export function ConfirmationDrawer({
                             <View style={styles.footer}>
                                 <TouchableOpacity
                                     onPress={onClose}
-                                    style={[styles.button, styles.cancelButton]}
+                                    style={[styles.button, styles.primaryButton]}
                                 >
-                                    <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                                    <Text style={styles.primaryButtonText}>{cancelText}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={() => {
                                         onConfirm();
                                         onClose();
                                     }}
-                                    style={[styles.button, styles.confirmButton]}
+                                    style={[styles.button, styles.secondaryButton]}
                                 >
-                                    <Text style={styles.confirmButtonText}>{confirmText}</Text>
+                                    <Text style={styles.secondaryButtonText}>{confirmText}</Text>
                                 </TouchableOpacity>
                             </View>
                         </Pressable>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#FEF3C7',
+        backgroundColor: '#FEE2E2',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -149,30 +149,30 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     footer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         gap: 12,
     },
     button: {
-        flex: 1,
-        height: 48,
+        width: '100%',
+        height: 52,
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    cancelButton: {
-        backgroundColor: '#F3F4F6',
+    primaryButton: {
+        backgroundColor: '#EC4899',
     },
-    cancelButtonText: {
-        color: '#374151',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    confirmButton: {
-        backgroundColor: '#EF4444',
-    },
-    confirmButtonText: {
+    primaryButtonText: {
         color: 'white',
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
+    },
+    secondaryButton: {
+        backgroundColor: 'transparent',
+    },
+    secondaryButtonText: {
+        color: '#9CA3AF',
+        fontSize: 14,
+        fontWeight: '500',
     },
 });

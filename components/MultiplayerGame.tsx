@@ -130,10 +130,10 @@ export default function MultiplayerGame({ roomId, playerId, isHost, initialQuest
                 visible={isLeaveDrawerVisible}
                 onClose={() => setIsLeaveDrawerVisible(false)}
                 onConfirm={confirmLeave}
-                title="¿Salir de la partida?"
+                title="¿Salir de la sala?"
                 description="Si sales ahora, la partida terminará para ambos jugadores."
-                confirmText="Sí, salir"
-                cancelText="Cancelar"
+                confirmText="Sí, salir de la sala"
+                cancelText="No, ¡sigamos jugando!"
             />
         </View>
     );

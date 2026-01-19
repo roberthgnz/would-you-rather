@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { ArrowLeft, LogIn, Plus } from 'lucide-react-native';
+import { LogIn, Plus } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../constants/api';
@@ -114,14 +114,6 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity 
-                onPress={handleCancel}
-                style={styles.backButton}
-            >
-                <ArrowLeft size={24} color="#4B5563" />
-                <Text style={styles.backButtonText}>{lobbyState === "menu" ? "Atrás" : "Cancelar"}</Text>
-            </TouchableOpacity>
-
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.iconContainer}>

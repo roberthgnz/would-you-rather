@@ -66,7 +66,7 @@ export function useWYRMultiplayer({
                     .on('broadcast', { event: 'player-voted' }, (payload: any) => {
                         setOpponentVoted(isHost ? payload.payload.guestVoted : payload.payload.hostVoted);
                         if (payload.payload.bothVoted && isHost) {
-                            fetch(`${API_URL}/api/pusher/wyr/reveal`, {
+                            fetch(`${API_URL}/api/wyr/wyr/reveal`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ roomId, playerId }),
@@ -161,7 +161,7 @@ export function useWYRMultiplayer({
     const vote = useCallback(async (answer: WYRAnswer): Promise<boolean> => {
         if (myAnswer !== null || !answer) return false;
         try {
-            const res = await fetch(`${API_URL}/api/pusher/wyr/vote`, {
+            const res = await fetch(`${API_URL}/api/wyr/wyr/vote`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId, answer }),
@@ -173,7 +173,7 @@ export function useWYRMultiplayer({
 
     const nextQuestion = useCallback(async (): Promise<boolean> => {
         try {
-            const res = await fetch(`${API_URL}/api/pusher/wyr/next`, {
+            const res = await fetch(`${API_URL}/api/wyr/wyr/next`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId }),
@@ -184,7 +184,7 @@ export function useWYRMultiplayer({
 
     const resetGame = useCallback(async (): Promise<boolean> => {
         try {
-            const res = await fetch(`${API_URL}/api/pusher/wyr/reset`, {
+            const res = await fetch(`${API_URL}/api/wyr/wyr/reset`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId, playerId }),
@@ -194,7 +194,7 @@ export function useWYRMultiplayer({
     }, [roomId, playerId]);
 
     const leaveGame = useCallback(() => {
-        fetch(`${API_URL}/api/pusher/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId, playerId }) }).catch(() => { });
+        fetch(`${API_URL}/api/wyr/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomId, playerId }) }).catch(() => { });
         const channel = supabase.channel(`game-${roomId}`);
         channel.unsubscribe();
     }, [roomId, playerId]);

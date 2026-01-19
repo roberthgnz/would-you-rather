@@ -43,7 +43,7 @@ export default function WYRScreen() {
 
     const handleLeave = () => {
         if (state?.roomId && state?.playerId) {
-            fetch(`${API_URL}/api/pusher/leave`, {
+            fetch(`${API_URL}/api/wyr/leave`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId }),

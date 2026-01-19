@@ -32,7 +32,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/pusher/wyr/room`, {
+            const res = await fetch(`${API_URL}/api/wyr/wyr/room`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ hostId: playerId }),
@@ -41,7 +41,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
             
             if (isCancelled.current) {
                 if (data.roomId) {
-                    fetch(`${API_URL}/api/pusher/leave`, {
+                    fetch(`${API_URL}/api/wyr/leave`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.roomId, playerId }),
@@ -67,7 +67,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         const playerId = generatePlayerId();
 
         try {
-            const res = await fetch(`${API_URL}/api/pusher/wyr/join`, {
+            const res = await fetch(`${API_URL}/api/wyr/wyr/join`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ roomId: joinRoomId.toUpperCase().trim(), guestId: playerId }),
@@ -76,7 +76,7 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
 
             if (isCancelled.current) {
                 if (data.success && data.room) {
-                    fetch(`${API_URL}/api/pusher/leave`, {
+                    fetch(`${API_URL}/api/wyr/leave`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roomId: data.room.id, playerId }),

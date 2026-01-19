@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { LogIn, Plus } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { ArrowLeft, LogIn, Plus } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../constants/api';
 import type { WYRQuestion } from '../types';
@@ -18,23 +18,44 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
     const [joinRoomId, setJoinRoomId] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const isCancelled = useRef(false);
+
+    useEffect(() => {
+        return () => { isCancelled.current = true; };
+    }, []);
 
     const handleCreateRoom = async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsLoading(true);
         setError(null);
+        isCancelled.current = false;
+        const playerId = generatePlayerId();
+
         try {
-            const playerId = generatePlayerId();
             const res = await fetch(`${API_URL}/api/pusher/wyr/room`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ hostId: playerId }),
             });
             const data = await res.json();
+            
+            if (isCancelled.current) {
+                if (data.roomId) {
+                    fetch(`${API_URL}/api/pusher/leave`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ roomId: data.roomId, playerId }),
+                    }).catch(() => {});
+                }
+                return;
+            }
+
             if (data.roomId) onRoomCreated(data.roomId, playerId);
             else setError("Error al crear la sala");
-        } catch { setError("Error de conexión"); }
-        finally { setIsLoading(false); }
+        } catch { 
+            if (!isCancelled.current) setError("Error de conexión"); 
+        }
+        finally { if (!isCancelled.current) setIsLoading(false); }
     };
 
     const handleJoinRoom = async () => {
@@ -42,14 +63,28 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsLoading(true);
         setError(null);
+        isCancelled.current = false;
+        const playerId = generatePlayerId();
+
         try {
-            const playerId = generatePlayerId();
             const res = await fetch(`${API_URL}/api/pusher/wyr/join`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ roomId: joinRoomId.toUpperCase().trim(), guestId: playerId }),
             });
             const data = await res.json();
+
+            if (isCancelled.current) {
+                if (data.success && data.room) {
+                    fetch(`${API_URL}/api/pusher/leave`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ roomId: data.room.id, playerId }),
+                    }).catch(() => {});
+                }
+                return;
+            }
+
             if (data.success && data.room) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 onRoomJoined(data.room.id, playerId, data.room.questions || []);
@@ -58,18 +93,33 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
                 setError(data.error || "Error al unirse");
             }
         } catch {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setError("Error de conexión");
+            if (!isCancelled.current) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                setError("Error de conexión");
+            }
         }
-        finally { setIsLoading(false); }
+        finally { if (!isCancelled.current) setIsLoading(false); }
+    };
+
+    const handleCancel = () => {
+        isCancelled.current = true;
+        setIsLoading(false);
+        if (lobbyState === "menu") {
+            onBack();
+        } else {
+            setLobbyState("menu");
+            setError(null);
+        }
     };
 
     return (
         <View style={styles.container}>
             <TouchableOpacity 
-                onPress={() => lobbyState === "menu" ? onBack() : (setLobbyState("menu"), setError(null))}
+                onPress={handleCancel}
                 style={styles.backButton}
             >
+                <ArrowLeft size={24} color="#4B5563" />
+                <Text style={styles.backButtonText}>{lobbyState === "menu" ? "Atrás" : "Cancelar"}</Text>
             </TouchableOpacity>
 
             <View style={styles.content}>
@@ -103,7 +153,8 @@ export default function WYRMultiplayerLobby({ onRoomCreated, onRoomJoined, onBac
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
                                 setLobbyState("joining"); 
                             }}
-                            style={[styles.button, styles.secondaryButton]}
+                            disabled={isLoading}
+                            style={[styles.button, styles.secondaryButton, isLoading && styles.disabledButton]}
                         >
                             <LogIn size={24} color="#374151" />
                             <Text style={styles.secondaryButtonText}>Unirse a Sala</Text>

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import WYRMultiplayerLobby from '../components/MultiplayerLobby';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
 import MultiplayerGame from '../components/MultiplayerGame';
+import WYRMultiplayerLobby from '../components/MultiplayerLobby';
 import WaitingRoom from '../components/WaitingRoom';
+import { API_URL } from '../constants/api';
 import type { WYRQuestion } from '../types';
 
 type GameMode = "lobby" | "waiting" | "game";
@@ -41,6 +42,13 @@ export default function WYRScreen() {
     };
 
     const handleLeave = () => {
+        if (state?.roomId && state?.playerId) {
+            fetch(`${API_URL}/api/pusher/leave`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId }),
+            }).catch(() => { });
+        }
         setState(null);
         setGameMode("lobby");
     };

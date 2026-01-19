@@ -57,7 +57,7 @@ export function ConfirmationDrawer({
                 
                 {visible && (
                     <Animated.View 
-                        entering={SlideInDown.springify().damping(25).stiffness(200)}
+                        entering={SlideInDown.duration(300)}
                         exiting={SlideOutDown.duration(300)}
                         style={styles.drawer} 
                     >
